@@ -9,18 +9,21 @@ public class Client
     private ushort _port = 11000;
     private string _ip = "127.0.0.1";
     private Socket _socket;
+    private SocketAsyncEventArgs _event;
 
     public bool Connect()
     {
 
         // Create UDP Socket
         _socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
-        if (_socket == null)
-            return false;
 
         // Set the socket into non-blocking mode 
         _socket.Blocking = false;
         IPEndPoint ip = new IPEndPoint(IPAddress.Parse(_ip), _port);
+
+        _event = new SocketAsyncEventArgs();
+        //_event.Completed += Callback;
+       
 
         try 
         {
@@ -40,7 +43,7 @@ public class Client
         return true;
     }
 
-    public void SendMessage(string s)
+    public void SendMessage(string msg)
     {
         try
         {
@@ -48,10 +51,11 @@ public class Client
                 return;
 
             // Encode the data string into a byte array.  
-            byte[] msg = Encoding.ASCII.GetBytes(s);
+            byte[] buffer = Encoding.ASCII.GetBytes(msg);
+            _event.SetBuffer(buffer, 0, buffer.Length);
 
             // Send the data through the socket.  
-            int bytesSent = _socket.Send(msg);
+            _socket.SendAsync(_event);
         }
         catch (SocketException e)
         {

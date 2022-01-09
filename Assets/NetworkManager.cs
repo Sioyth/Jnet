@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class NetworkManager : MonoBehaviour
 {
@@ -8,12 +9,7 @@ public class NetworkManager : MonoBehaviour
     private Server _server = new Server();
     private Client _client = new Client();
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        //_server = new Server();
-        //_client = new Client();
-    }
+    [SerializeField] private InputField _inputField;
 
    public void Host()
    {
@@ -27,6 +23,6 @@ public class NetworkManager : MonoBehaviour
 
     public void SendMessage()
     {
-        _client.SendMessage("Hello server");
+        _client.SendMessage(_inputField.text);
     }
 }
