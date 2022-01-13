@@ -5,11 +5,11 @@ using System.Text;
 using UnityEngine;
 public class Server
 {
+    private static string _protocolID = "hash";
     private static ushort _port = 11000;
     private Socket _socket;
 
     private SocketAsyncEventArgs _event;
-
     public void Start()
     {
         Listen();
@@ -54,8 +54,10 @@ public class Server
             if(e.SocketError != SocketError.Success)
                 return; // TODO: Close Socket
 
-            string data = Encoding.ASCII.GetString(e.Buffer, 0, e.BytesTransferred);
-            Debug.Log(data);
+            //string data = Encoding.ASCII.GetString(e.Buffer, 0, e.BytesTransferred);
+            //Debug.Log(data);
+
+            Debug.Log(e.Buffer.FromJsonBinary<Packet>().msg);
 
             // You need to issue another ReceiveAsync, you can't just call ProcessReceive again
             if (!_socket.ReceiveAsync(e))

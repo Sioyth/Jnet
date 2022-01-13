@@ -25,4 +25,9 @@ public class NetworkManager : MonoBehaviour
     {
         _client.SendMessage(_inputField.text);
     }
+
+    public void SendPacket()
+    {
+        _client.SendPacket<string>("This is a what?");
+    }
 }

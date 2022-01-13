@@ -6,10 +6,16 @@ using UnityEngine;
 
 public class Client
 {
+    private static string _protocolID = "hash";
     private ushort _port = 11000;
     private string _ip = "127.0.0.1";
     private Socket _socket;
     private SocketAsyncEventArgs _event;
+
+    public struct Packet
+    {
+        public string msg;
+    }
 
     public bool Connect()
     {
@@ -28,6 +34,7 @@ public class Client
         try 
         {
             _socket.Connect(ip);
+            Debug.Log($"Connection was to {_ip} was sucessfull");
         } 
         catch(Exception e)
         {
@@ -36,9 +43,17 @@ public class Client
             return false;
         }
 
-        Debug.Log($"Connection was to {_ip} was sucessfull");
 
-        SendMessage("Hello Server");
+        //SendMessage(_protocolID + "Hello Server");
+        Packet packet = new Packet()
+        {
+            msg = "Hello i'm a packete!"
+        };
+
+        byte[] bytes = packet.ToJsonBinary();
+        Packet packet2 = bytes.FromJsonBinary<Packet>();
+        Debug.Log(packet);
+        //SendPacket<Packet>(packet);
 
         return true;
     }
@@ -61,6 +76,30 @@ public class Client
         {
             Debug.LogException(e);
             Debug.Log("Couldn't Send Message");
+        }
+    }
+
+    public void SendPacket<T>(T t)
+    {
+        try
+        {
+            if (_socket == null)
+                return;
+
+            // Encode the data string into a byte array.  
+            byte[] buffer = t.ToJsonBinary();
+            _event.SetBuffer(buffer, 0, buffer.Length);
+            
+            
+            Debug.Log(buffer.FromJsonBinary<T>());
+
+            // Send the data through the socket.  
+            _socket.SendAsync(_event);
+        }
+        catch (SocketException e)
+        {
+            Debug.LogException(e);
+            Debug.Log("Couldn't Send Packet");
         }
     }
 
