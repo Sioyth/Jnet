@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using UnityEngine;
+using System.Collections.Generic;
 public class Server
 {
     private static string _protocolID = "hash";
@@ -10,6 +11,8 @@ public class Server
     private Socket _socket;
 
     private SocketAsyncEventArgs _event;
+    private List<Socket> _connections = new List<Socket>();
+    
     public void Start()
     {
         Listen();
@@ -27,15 +30,15 @@ public class Server
         {
             _socket.Bind(new IPEndPoint(IPAddress.Any, _port));
             _event = new SocketAsyncEventArgs();
-            _event.Completed += ReceiveCallback;
+            _event.Completed += OnConnect;
 
             byte[] buffer = new byte[1024];
             _event.SetBuffer(buffer, 0, 1024);
 
-            //while (_isUp && _isListening)
-            {
-                _socket.ReceiveAsync(_event);
-            }
+            
+            //_socket.ReceiveAsync(_event);
+            StartListening(_event);
+            
 
         }
         catch (Exception e)
@@ -47,7 +50,48 @@ public class Server
         return true;
     }
 
-    private void ReceiveCallback(object sender, SocketAsyncEventArgs e)
+    private void StartListening(SocketAsyncEventArgs e)
+    {
+        //e.AcceptSocket = null;
+        _socket.ReceiveAsync(e);
+        
+    }
+    private void OnConnect(object sender, SocketAsyncEventArgs e)
+    {
+        if (e.BytesTransferred > 0)
+        {
+            if (e.SocketError != SocketError.Success)
+                Debug.Log("ERROR"); // TODO: Close Socket
+
+            //string data = Encoding.ASCII.GetString(e.Buffer, 0, e.BytesTransferred);
+            //Debug.Log(data);
+
+            Packet p = e.Buffer.FromJsonBinary<Packet>();
+            if (p._protocolID != _protocolID)
+                Debug.Log("Protocol Error");
+
+            //_connections.Add(e.ConnectSocket);
+            //SocketAsyncEventArgs s = new SocketAsyncEventArgs();
+            //s.AcceptSocket = e.AcceptSocket;
+            //s.Completed += OnReceive;
+            //_connections[_connections.Count - 1].ReceiveAsync(e);
+
+            Debug.Log("Connect:" + p._msg);
+
+
+            if (!_socket.ReceiveAsync(e))
+            {
+                OnConnect(null, e);
+            }
+
+        }
+        else
+        {
+            Debug.Log("No data");
+        }
+    }
+
+    private void OnReceive(object sender, SocketAsyncEventArgs e)
     {
         if (e.BytesTransferred > 0)
         {
@@ -57,20 +101,22 @@ public class Server
             //string data = Encoding.ASCII.GetString(e.Buffer, 0, e.BytesTransferred);
             //Debug.Log(data);
 
-            Debug.Log(e.Buffer.FromJsonBinary<Packet>().msg);
-
-            // You need to issue another ReceiveAsync, you can't just call ProcessReceive again
+            Packet p = e.Buffer.FromJsonBinary<Packet>();
+            if (p._protocolID != _protocolID)
+                Debug.Log("Wrong protocol!");
+            
+            Debug.Log("Receive" + e.Buffer.FromJsonBinary<Packet>()._msg);
             if (!_socket.ReceiveAsync(e))
             {
                 // Call completed synchonously
-                ReceiveCallback(e);
+                OnReceive(e);
             }
         }
     }
 
-    private void ReceiveCallback(SocketAsyncEventArgs e)
+    private void OnReceive(SocketAsyncEventArgs e)
     {
-        ReceiveCallback(null, e);
+        OnReceive(null, e);
     }
 
     // Rename

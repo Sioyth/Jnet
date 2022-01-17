@@ -12,11 +12,6 @@ public class Client
     private Socket _socket;
     private SocketAsyncEventArgs _event;
 
-    public struct Packet
-    {
-        public string msg;
-    }
-
     public bool Connect()
     {
 
@@ -45,15 +40,7 @@ public class Client
 
 
         //SendMessage(_protocolID + "Hello Server");
-        Packet packet = new Packet()
-        {
-            msg = "Hello i'm a packete!"
-        };
-
-        byte[] bytes = packet.ToJsonBinary();
-        Packet packet2 = bytes.FromJsonBinary<Packet>();
-        Debug.Log(packet);
-        //SendPacket<Packet>(packet);
+        SendPacket("Heyo");
 
         return true;
     }
@@ -84,23 +71,32 @@ public class Client
         try
         {
             if (_socket == null)
-                return;
+                Debug.Log("Null socket");
 
             // Encode the data string into a byte array.  
             byte[] buffer = t.ToJsonBinary();
             _event.SetBuffer(buffer, 0, buffer.Length);
-            
-            
-            Debug.Log(buffer.FromJsonBinary<T>());
 
             // Send the data through the socket.  
-            _socket.SendAsync(_event);
+            //_socket.SendAsync(_event);
+
+            bool willRaiseEvent = _socket.SendAsync(_event);
+            //if (!willRaiseEvent)
+            //{
+            //    SendPacket<T>(t);
+            //}
         }
         catch (SocketException e)
         {
             Debug.LogException(e);
             Debug.Log("Couldn't Send Packet");
         }
+    }
+
+    public void SendPacket(string msg)
+    {
+        Packet packet = new Packet(_protocolID, msg);
+        SendPacket<Packet>(packet);
     }
 
     ~Client()

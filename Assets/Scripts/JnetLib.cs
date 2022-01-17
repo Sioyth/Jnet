@@ -47,9 +47,15 @@ public static class JnetExtensions
 
 
 [Serializable]
-[StructLayout(LayoutKind.Sequential,Pack = 1)]
 public struct Packet
 {
-    public string msg;
+    public string _protocolID;
+    public string _msg;
+
+    public Packet(string protocolID, string msg)
+    {
+        _protocolID = protocolID;
+        _msg = msg;
+    }
 }
 
