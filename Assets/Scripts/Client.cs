@@ -78,15 +78,9 @@ public class Client
             _event.SetBuffer(buffer, 0, buffer.Length);
 
             // Send the data through the socket.  
-            //_socket.SendAsync(_event);
-
-            bool willRaiseEvent = _socket.SendAsync(_event);
-            //if (!willRaiseEvent)
-            //{
-            //    SendPacket<T>(t);
-            //}
+            _socket.SendAsync(_event);
         }
-        catch (SocketException e)
+        catch (Exception e)
         {
             Debug.LogException(e);
             Debug.Log("Couldn't Send Packet");

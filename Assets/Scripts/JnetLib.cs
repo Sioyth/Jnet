@@ -35,11 +35,14 @@ public static class JnetExtensions
     #region Json Serialization
     public static byte[] ToJsonBinary(this object obj)
     {
-        return Encoding.ASCII.GetBytes(JsonUtility.ToJson(obj));
+        string json = JsonUtility.ToJson(obj);
+        Debug.Log(json);
+        return Encoding.ASCII.GetBytes(json);
     }
 
     public static T FromJsonBinary<T>(this byte[] data)
     {
+        Debug.Log(Encoding.ASCII.GetString(data));
         return JsonUtility.FromJson<T>(Encoding.ASCII.GetString(data));
     }
     #endregion

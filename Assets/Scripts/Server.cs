@@ -34,7 +34,6 @@ public class Server
 
             byte[] buffer = new byte[1024];
             _event.SetBuffer(buffer, 0, 1024);
-
             
             //_socket.ReceiveAsync(_event);
             StartListening(_event);
@@ -66,22 +65,36 @@ public class Server
             //string data = Encoding.ASCII.GetString(e.Buffer, 0, e.BytesTransferred);
             //Debug.Log(data);
 
-            Packet p = e.Buffer.FromJsonBinary<Packet>();
-            if (p._protocolID != _protocolID)
-                Debug.Log("Protocol Error");
-
-            //_connections.Add(e.ConnectSocket);
-            //SocketAsyncEventArgs s = new SocketAsyncEventArgs();
-            //s.AcceptSocket = e.AcceptSocket;
-            //s.Completed += OnReceive;
-            //_connections[_connections.Count - 1].ReceiveAsync(e);
-
-            Debug.Log("Connect:" + p._msg);
-
-
-            if (!_socket.ReceiveAsync(e))
+            try
             {
-                OnConnect(null, e);
+                Packet p = e.Buffer.FromJsonBinary<Packet>();
+
+                // clear buffer
+                byte[] buffer = new byte[1024];
+                _event.SetBuffer(buffer, 0, 1024);
+
+                if (p._protocolID != _protocolID)
+                    Debug.Log("Protocol Error");
+
+                //_connections.Add(e.ConnectSocket);
+                //SocketAsyncEventArgs s = new SocketAsyncEventArgs();
+                //s.AcceptSocket = e.AcceptSocket;
+                //s.Completed += OnReceive;
+                //_connections[_connections.Count - 1].ReceiveAsync(e);
+
+                Debug.Log("Connect:" + p._msg);
+
+           
+                if (!_socket.ReceiveAsync(e))
+                {
+                    Debug.Log("sync");
+                    OnConnect(null, e);
+                }
+
+            }
+            catch (Exception e2)
+            {
+                Debug.LogException(e2);
             }
 
         }
@@ -96,7 +109,7 @@ public class Server
         if (e.BytesTransferred > 0)
         {
             if(e.SocketError != SocketError.Success)
-                return; // TODO: Close Socket
+                Debug.Log("ERROR"); // TODO: Close Socket
 
             //string data = Encoding.ASCII.GetString(e.Buffer, 0, e.BytesTransferred);
             //Debug.Log(data);
