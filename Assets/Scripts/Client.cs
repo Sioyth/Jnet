@@ -25,7 +25,6 @@ public class Client
         _event = new SocketAsyncEventArgs();
         //_event.Completed += Callback;
        
-
         try 
         {
             _socket.Connect(ip);

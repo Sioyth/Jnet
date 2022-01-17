@@ -4,14 +4,38 @@ using System.Net.Sockets;
 using System.Text;
 using UnityEngine;
 using System.Collections.Generic;
+
+// rename
+public class ConnectedClient
+{
+    private Socket _socket;
+    private JTimer _timeOutTimer;
+
+    public ConnectedClient(Socket socket)
+    {
+        Socket = socket;
+        _timeOutTimer = new JTimer(1);
+    }
+
+    public JTimer TimeOutTimer { get => _timeOutTimer; set => _timeOutTimer = value; }
+    public Socket Socket { get => _socket; set => _socket = value; }
+    public void Close()
+    {
+        _socket?.Shutdown(SocketShutdown.Both);
+        _socket?.Close();
+    }
+
+    
+}
+
 public class Server
 {
     private static string _protocolID = "hash";
     private static ushort _port = 11000;
-    private Socket _socket;
+    private Socket _listener;
 
     private SocketAsyncEventArgs _event;
-    private List<Socket> _connections = new List<Socket>();
+    private List<ConnectedClient> _connections = new List<ConnectedClient>();
 
     public void Start()
     {
@@ -20,24 +44,19 @@ public class Server
 
     private bool Listen()
     {
-        // Create UDP Socket
-        _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        // Create Listener Socket
+        _listener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
 
         // Set the socket into non-blocking mode 
-        _socket.Blocking = false;
+        _listener.Blocking = false;
 
         try
         {
-            _socket.Bind(new IPEndPoint(IPAddress.Any, _port));
+            _listener.Bind(new IPEndPoint(IPAddress.Any, _port));
             _event = new SocketAsyncEventArgs();
             _event.Completed += OnConnect;
 
-            //byte[] buffer = new byte[1024];
-            //_event.SetBuffer(buffer, 0, 1024);
-
-            //_socket.ReceiveAsync(_event);
             StartListening(_event);
-
 
         }
         catch (Exception e)
@@ -56,9 +75,9 @@ public class Server
         // clear buffer
         e.SetBuffer(new byte[1024], 0, 1024);
 
-        if(!_socket.ReceiveAsync(e))
+        if(!_listener.ReceiveAsync(e))
         {
-            _socket.ReceiveAsync(e);
+            _listener.ReceiveAsync(e);
         }
 
     }
@@ -72,19 +91,15 @@ public class Server
             try
             {
                 Packet p = e.Buffer.FromJsonBinary<Packet>();
-                //byte[] buffer = new byte[1024];
-                //e.SetBuffer(buffer, 0, 1024);
+
                 if (p._protocolID != _protocolID)
                     Debug.Log("Protocol Error");
 
+                Debug.Log(p._msg);
 
-                //NewConnection(e.AcceptSocket);
-                Debug.Log("Connect:" + p._msg);
-
-
-                StartListening(e);
+                NewConnection(e.ConnectSocket);
+                //StartListening(e);
                 
-
             }
             catch (Exception e2)
             {
@@ -100,46 +115,82 @@ public class Server
 
     private void OnReceive(object sender, SocketAsyncEventArgs e)
     {
-        Debug.Log("Receive");
         if (e.BytesTransferred > 0)
         {
             if (e.SocketError != SocketError.Success)
                 Debug.Log("ERROR"); // TODO: Close Socket
 
-            //string data = Encoding.ASCII.GetString(e.Buffer, 0, e.BytesTransferred);
-            //Debug.Log(data);
-
             Packet p = e.Buffer.FromJsonBinary<Packet>();
             if (p._protocolID != _protocolID)
                 Debug.Log("Wrong protocol!");
 
-            Debug.Log("Receive" + e.Buffer.FromJsonBinary<Packet>()._msg);
-            if (!_socket.ReceiveAsync(e))
-            {
-                // Call completed synchonously
-                OnReceive(e);
-            }
+            Debug.Log("R - " + e.Buffer.FromJsonBinary<Packet>()._msg);
+
+            // clear buffer
+            e.SetBuffer(new byte[1024], 0, 1024);
+
+            ((ConnectedClient)e.UserToken).TimeOutTimer.Start();
+            ((ConnectedClient)e.UserToken).Socket.ReceiveAsync(e);
+            
+            
         }
     }
 
-    private void NewConnection(Socket socket)
+    private async void Timer(float lastTime)
     {
-        _connections.Add(socket);
-        SocketAsyncEventArgs s = new SocketAsyncEventArgs();
-        s.AcceptSocket = _connections[_connections.Count - 1];
-        s.Completed += OnReceive;
-        _connections[_connections.Count - 1].ReceiveAsync(s);
+        float t = Time.time - lastTime;
+
+        if (t > 10)
+        {
+            //TimeOut();
+        }
     }
 
+    //TODO do a BeginReceive
     private void OnReceive(SocketAsyncEventArgs e)
     {
         OnReceive(null, e);
     }
 
+    private void BeginReceive(SocketAsyncEventArgs e)
+    {
+        
+    }
+
+
+    // Rename
+    private void NewConnection(Socket socket)
+    {
+        Debug.Log("A client has connected");
+
+        _connections.Add(new ConnectedClient(socket));
+        SocketAsyncEventArgs s = new SocketAsyncEventArgs();
+
+        s.AcceptSocket = _connections[_connections.Count - 1].Socket;
+        s.SetBuffer(new byte[1024], 0, 1024);
+        s.Completed += OnReceive;
+        s.UserToken = _connections[_connections.Count - 1];
+
+        _connections[_connections.Count - 1].TimeOutTimer.OnElapsedTime += ClientTimeOut;
+        _connections[_connections.Count - 1].Socket.ReceiveAsync(s);
+
+    }
+
+    private void ClientTimeOut()
+    {
+        //Debug.Log(source.GetType().Name);
+        //((Timer)source).Stop();
+        Debug.Log("A client has disconnected");
+        
+        //_connections[index].Shutdown(SocketShutdown.Both);
+        //_connections[index].Dispose();
+        // _connections.Remove(index);
+    }
+
     // Rename
     private void Exit()
     {
-        _socket.Close();
+        _listener.Close();
     }
 
     ~Server()

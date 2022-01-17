@@ -23,7 +23,13 @@ public class NetworkManager : MonoBehaviour
 
     public void SendMessage()
     {
-        _client.SendMessage(_inputField.text);
+        //_client.SendMessage(_inputField.text);
+        JTimer timer = new JTimer(10);
+        timer.OnElapsedTime += () =>
+        {
+            Debug.Log("Time has passed");
+        };
+        timer.Start();
     }
 
     public void SendPacket()
