@@ -34,7 +34,6 @@ public class NetworkManager : MonoBehaviour
 
     public void SendPacket()
     {
-        //_client.SendPacket<Packet>(new Packet("hash", _inputField.text));
         _client.SendPacket(_inputField.text);
     }
 }

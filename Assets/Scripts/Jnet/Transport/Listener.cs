@@ -84,21 +84,20 @@ public abstract class Listener
         Debug.Log("A client has connected");
         _newConnection?.Invoke();
         _connections.Add(new Connection(e.ConnectSocket));
-        SocketAsyncEventArgs s = new SocketAsyncEventArgs();
 
+        SocketAsyncEventArgs s = e;
         s.AcceptSocket = _connections[_connections.Count - 1].Socket;
-        s.SetBuffer(new byte[1024], 0, 1024);
         s.Completed += OnPacketReceived;
         s.UserToken = _connections[_connections.Count - 1];
 
         _connections[_connections.Count - 1].TimeOutTimer.OnElapsedTime += OnClientTimeOut;
-        _connections[_connections.Count - 1].Socket.ReceiveAsync(s);
+        OnPacketReceived(null, s);
     }
 
-    protected void OnNewConnection(object sender, SocketAsyncEventArgs e)
-    {
-        OnNewConnection(e);
-    }
+    //protected void OnNewConnection(object sender, SocketAsyncEventArgs e)
+    //{
+    //    OnNewConnection(e);
+    //}
     #endregion
 
     private void OnPacketReceived(object sender, SocketAsyncEventArgs e)
@@ -135,5 +134,33 @@ public abstract class Listener
         SocketAsyncEventArgs e = new SocketAsyncEventArgs();
         e.SetBuffer(data, 0, data.Length);
         _connections[id]?.Socket.SendAsync(e);
+    }
+
+    public void SendPacket<T>(T t)
+    {
+        try
+        {
+            if (_socket == null)
+                Debug.Log("Null socket");
+
+            //Encode the data string into a byte array.  
+            byte[] buffer = t.ToJsonBinary();
+            SocketAsyncEventArgs e = new SocketAsyncEventArgs();
+            e.SetBuffer(buffer, 0, buffer.Length);
+
+            //Send the data through the socket.  
+            _connections[0].Socket.SendAsync(e);
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+            Debug.Log("Couldn't Send Packet");
+        }
+    }
+
+    public void SendPacket(string msg)
+    {
+        Packet packet = new Packet("", msg);
+        SendPacket<Packet>(packet);
     }
 }
