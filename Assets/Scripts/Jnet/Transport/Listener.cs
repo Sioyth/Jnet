@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Events;
 using System.Collections.Generic;
 
 public abstract class Listener
@@ -15,6 +16,8 @@ public abstract class Listener
     protected Action _newConnection;
     protected Action _connectionTimeOut;
     protected List<Connection> _connections = new List<Connection>();
+
+    public Action NewConnection { get => _newConnection; set => _newConnection = value; }
 
     #region Listen
     public void Listen(ushort port, bool skipConnect = false)
@@ -82,7 +85,7 @@ public abstract class Listener
     private void OnNewConnection(SocketAsyncEventArgs e)
     {
         Debug.Log("A client has connected");
-        _newConnection?.Invoke();
+        _newConnection.Invoke();
         _connections.Add(new Connection(e.ConnectSocket));
 
         SocketAsyncEventArgs s = e;

@@ -23,7 +23,6 @@ public class Client : Listener
         asyncEvent.RemoteEndPoint = new IPEndPoint(IPAddress.Parse(_ip), 11000);
         asyncEvent.Completed += (s, e) =>
         {
-            Debug.Log(e.ConnectSocket.Connected);
             if (e.SocketError == SocketError.Success)
             {
                 SendPacket("Heyo");

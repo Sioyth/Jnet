@@ -9,11 +9,13 @@ using System.Collections.Generic;
 public class Connection
 {
     private Socket _socket;
+    private object _userHandle;
     private JTimer _timeOutTimer;
 
-    public Connection(Socket socket)
+    public Connection(Socket socket, object userHandle = null)
     {
-        Socket = socket;
+        _socket = socket;
+        _userHandle = userHandle;
         _timeOutTimer = new JTimer(10);
     }
 
@@ -24,13 +26,15 @@ public class Connection
         _socket?.Shutdown(SocketShutdown.Both);
         _socket?.Close();
     }
-
-    
 }
 
 public class Server : Listener
 {
     private ushort _port = 11000;
+
+    public Server()
+    {
+    }
 
     public void Start()
     {
