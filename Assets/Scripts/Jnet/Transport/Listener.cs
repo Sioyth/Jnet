@@ -15,7 +15,7 @@ public abstract class Listener
 
     protected Action _newConnection;
     protected Action _connectionTimeOut;
-    protected List<Connection> _connections = new List<Connection>();
+    protected List<NetworkConnection> _connections = new List<NetworkConnection>();
 
     public Action NewConnection { get => _newConnection; set => _newConnection = value; }
 
@@ -86,7 +86,7 @@ public abstract class Listener
     {
         Debug.Log("A client has connected");
         _newConnection.Invoke();
-        _connections.Add(new Connection(e.ConnectSocket));
+        _connections.Add(new NetworkConnection(e.ConnectSocket));
 
         SocketAsyncEventArgs s = e;
         s.AcceptSocket = _connections[_connections.Count - 1].Socket;
@@ -118,7 +118,7 @@ public abstract class Listener
             //_onPacketReceived.Invoke();
 
             //((Connection)e.UserToken).TimeOutTimer.Start();
-            ((Connection)e.UserToken).Socket.ReceiveAsync(e);
+            ((NetworkConnection)e.UserToken).Socket.ReceiveAsync(e);
         }
     }
 
@@ -129,7 +129,7 @@ public abstract class Listener
 
         //_connections[index].Shutdown(SocketShutdown.Both);
         //_connections[index].Dispose();
-        // _connections.Remove(index);
+        //_connections.Remove(index);
     }
 
     private void Send(byte[] data, int id = 0)

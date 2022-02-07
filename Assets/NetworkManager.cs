@@ -6,17 +6,21 @@ using UnityEngine.UI;
 public class NetworkManager : MonoBehaviour
 {
 
-    private int _id = 0;
+    private uint _id = 0;
+    //TODO: change this to a better client handling id
+    private uint _clientsCount = 0;
     private Server _server = new Server();
     private Client _client = new Client();
     private static NetworkManager _instance;
 
+    [Header("Debug")]
     [SerializeField] private GameObject _networkingUI;
     [SerializeField] private GameObject _playerPrefab;
     [SerializeField] private InputField _inputField;
 
-    private Dictionary<int, GameObject> _players = new Dictionary<int, GameObject>();
+    private Dictionary<uint, GameObject> _connectedClients = new Dictionary<uint, GameObject>();
     public static NetworkManager Instance { get => _instance; set => _instance = value; }
+    public uint Id { get => _id; }
 
     private NetworkManager()
     {
@@ -28,11 +32,22 @@ public class NetworkManager : MonoBehaviour
 
     public void Host()
     {
-        //_networkingUI.SetActive(false);
+        _networkingUI.SetActive(false);
         _server.Start();
+        _connectedClients.Add(0, Instantiate(_playerPrefab));
+
         _server.NewConnection += () =>
         {
-            ExecuteOnMainThread.Instance.Execute(() => _players.Add(_id++, Instantiate(_playerPrefab)));
+            _clientsCount++;
+
+            ExecuteOnMainThread.Instance.Execute( () => 
+            { 
+                GameObject player = Instantiate(_playerPrefab);
+                player.GetComponent<NetworkObject>().SetOwner(_clientsCount);
+                _connectedClients.Add(_clientsCount, player);
+            });
+
+            //send packet to assign clientID;
         };
 
     }
@@ -41,7 +56,7 @@ public class NetworkManager : MonoBehaviour
     {
         _networkingUI.SetActive(false);
         _client.Connect();
-        _players.Add(0, Instantiate(_playerPrefab));
+        _connectedClients.Add(0, Instantiate(_playerPrefab));
     }
 
     public void SendMessage()

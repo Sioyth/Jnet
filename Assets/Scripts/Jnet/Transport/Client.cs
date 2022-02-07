@@ -15,7 +15,7 @@ public class Client : Listener
         {
             _socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
             _socket.Blocking = false;
-            _connections.Add(new Connection(_socket));
+            _connections.Add(new NetworkConnection(_socket));
         }
 
         SocketAsyncEventArgs asyncEvent = new SocketAsyncEventArgs();
